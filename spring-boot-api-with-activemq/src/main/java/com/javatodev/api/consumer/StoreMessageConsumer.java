@@ -13,8 +13,8 @@ public class StoreMessageConsumer {
      * Message Listener of ActiveMQ queue
      * @param store
      */
-    @JmsListener(destination = "store_msg_queue")
-    public void messageListener(Store store){
-        log.info("Message Received. {}",store);
+    @JmsListener(destination = "${activemq.destination}", containerFactory = "jmsFactory")
+    public void processToDo(Store store) {
+        log.info("Consumer> " + store);
     }
 }

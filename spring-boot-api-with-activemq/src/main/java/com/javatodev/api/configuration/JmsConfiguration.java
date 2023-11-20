@@ -1,26 +1,46 @@
 package com.javatodev.api.configuration;
 
 import jakarta.jms.ConnectionFactory;
+import org.springframework.boot.autoconfigure.jms.DefaultJmsListenerContainerFactoryConfigurer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.jms.annotation.EnableJms;
 import org.springframework.jms.config.DefaultJmsListenerContainerFactory;
+import org.springframework.jms.config.JmsListenerContainerFactory;
+import org.springframework.jms.support.converter.MappingJackson2MessageConverter;
+import org.springframework.jms.support.converter.MessageConverter;
+import org.springframework.jms.support.converter.MessageType;
 
 @Configuration
 @EnableJms
 public class JmsConfiguration {
 
     /**
-     * Set the connection with the ActiveMQ
+     * Create JMS Connection Factory
      * @param connectionFactory
-     * @return JmsListenerContainerFactory
+     * @param configurer
+     * @return Connection Factory
      */
     @Bean
-    public DefaultJmsListenerContainerFactory defaultJmsListenerContainerFactory(ConnectionFactory connectionFactory){
-        DefaultJmsListenerContainerFactory defaultJmsListenerContainerFactory = new DefaultJmsListenerContainerFactory();
-        defaultJmsListenerContainerFactory.setConnectionFactory(connectionFactory);
-        // Set concurrency with minimum 5 consumers and automatically scale up to maximum of 10 consumers
-        defaultJmsListenerContainerFactory.setConcurrency("5-10");
-        return defaultJmsListenerContainerFactory;
+    public JmsListenerContainerFactory<?> jmsFactory(ConnectionFactory connectionFactory,
+                                                     DefaultJmsListenerContainerFactoryConfigurer configurer) {
+        DefaultJmsListenerContainerFactory factory = new DefaultJmsListenerContainerFactory();
+        factory.setMessageConverter(jacksonJmsMessageConverter());
+        configurer.configure(factory, connectionFactory);
+        return factory;
     }
+
+    /**
+     * Serialize message content to json using TextMessage
+     *
+     * @return Message Converter
+     */
+    @Bean
+    public MessageConverter jacksonJmsMessageConverter() {
+        MappingJackson2MessageConverter converter = new MappingJackson2MessageConverter();
+        converter.setTargetType(MessageType.TEXT);
+        converter.setTypeIdPropertyName("_asb_");
+        return converter;
+    }
+
 }
